@@ -1,0 +1,50 @@
+Client server interact via tcp
+
+Server has one checking and one saving
+accessable by a single client each
+startup: initilize accts to 0
+
+fcns of server (that client can ask for):
+• check balance in an account
+• deposit a specified amount to an account
+• withdraw a specified amount from an account
+• transfer a specified amount from one account to the other
+
+amounts always whole dollars, never above 1,000,000
+withdraws should only be in x*20 && < Balance
+Client can request withdraw from any account, but only checking will succeed
+Transfers only allowed if transfer <= Balance
+
+errors returned if ^ not true
+
+The message from client to server contains:
+type of transaction requested, the amount (if applicable),
+and account to perform on(s or c)
+servers response: type trans, balance before/after transaction
+
+Client: amount 
+  |  withdraw:  0
+  |  deposit:   1
+  |  transfer:  2
+  |  check_bal: 3
+
+  |  checking:  4
+  |  savings:   5
+
+  |  amount: [Natural #'s, -1]
+
+response Some responses will include -1, ignore those fields.
+    | trans_type: [0,1,2,3]
+    | account_type: [4,5]
+    | balancebefore_trans:  [Natural #'s, -1]
+    | balanceafter_trans: Integer
+    | err_code: [0: no error, 1: insufficient funds, 2: withdrawal not multiple of 20, 3: attempting to withdraw from savings account]
+    
+Client : { account_type, transaction_type, transaction_amount }
+    
+Server : { account_type, trans_type, balancebefore_trans, balanceafter_trans, err_code }
+
+withdraw_valid : { 0 , 4 , 100 }
+withdraw_invalid : { 0 , 3 , 100 }
+withdraw_invalid : { 0 , 4 , 115 }
+
