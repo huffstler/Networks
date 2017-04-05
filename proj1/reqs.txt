@@ -38,13 +38,19 @@ response Some responses will include -1, ignore those fields.
     | account_type: [4,5]
     | balancebefore_trans:  [Natural #'s, -1]
     | balanceafter_trans: Integer
-    | err_code: [0: no error, 1: insufficient funds, 2: withdrawal not multiple of 20, 3: attempting to withdraw from savings account]
+    | err_code: [
+      0: no error, 
+      1: insufficient funds, 
+      2: withdrawal not multiple of 20, 
+      3: attempting to withdraw from savings account
+      4: transaction was > 1000000
+     ]
     
 Client : { account_type, transaction_type, transaction_amount }
     
 Server : { account_type, trans_type, balancebefore_trans, balanceafter_trans, err_code }
 
-withdraw_valid : { 0 , 4 , 100 }
-withdraw_invalid : { 0 , 3 , 100 }
-withdraw_invalid : { 0 , 4 , 115 }
+withdraw_valid :   {0,4,100}
+withdraw_invalid : {0,3,100}
+withdraw_invalid : {0,4,115}
 
