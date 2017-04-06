@@ -178,13 +178,12 @@ int main(void) {
 
         printf("\nThis is what you got from the server: %s, and this is it's size: %d", serverResponse, strlen(serverResponse));
 
+        i=0;
         char *token = strtok(serverResponse,",");
-        messageData[i] = atoi(token);
-
         while (token != NULL) {
-            i++;
-            token = strtok(NULL, ",");
             messageData[i] = atoi(token);
+            token = strtok(NULL, ",");
+            i++;
         }
 
         accttype = messageData[0];
