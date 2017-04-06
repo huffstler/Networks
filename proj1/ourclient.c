@@ -178,13 +178,13 @@ int main(void) {
         memcpy(bufferString,sentence,msg_len);
         //printf("BufferString: %s Sentence: %s\n", bufferString, sentence);
         /* send message */
-        //printf("\nSending message: %s, of size: %d\n", sentence, strlen(sentence));
+        printf("\nSending message: %s, it is %d bytes.\n", sentence, sizeof(sentence));
         bytes_sent = send(sock_client, bufferString, msg_len, 0);
 
         /* get response from server */
         bytes_recd = recv(sock_client, serverResponse, STRING_SIZE, 0); 
 
-        //printf("\nThis is what you got from the server: %s, and this is it's size: %d\n", serverResponse, strlen(serverResponse));
+        printf("\nReceived %s from the server. It is %d bytes.\n", serverResponse, sizeof(serverResponse));
 
         i=0;
         char *token = strtok(serverResponse,",");
@@ -239,15 +239,60 @@ int main(void) {
         printf("Are you done making transactions? Yes = 1 No = 0\n>> ");
         scanf("%d", &end);
         /* close the socket */
+        int quit = 0;
+
         if (end) {
             // send closing packet to server to tell it to cut connection
             accttype = -1;
             msg_len = strlen(sentence) + 1;
             sprintf(sentence,"%d,%d,%d",accttype,transtype,amount);
 			memcpy(bufferString,sentence,msg_len);
-			//printf("BufferString: %s Sentence: %s\n", bufferString, sentence);
+			// printf("BufferString: %s Sentence: %s\n", bufferString, sentence);
             send(sock_client, bufferString, msg_len, 0);           
             close (sock_client);
+
+            printf("Would you like to make a new connection? Yes = 1 No = 0\n>> ");
+            scanf("%d", quit);
+
+            if (quit) {
+
+                if ((sock_client = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
+                    perror("Client: can't open stream socket");
+                    exit(1);
+                }
+
+                /* initialize server address information */
+                printf("Enter hostname of server: ");
+                scanf("%s", server_hostname);
+
+                if ((server_hp = gethostbyname(server_hostname)) == NULL) {
+                    perror("Client: invalid server hostname");
+                    close(sock_client);
+                    exit(1);
+                }
+
+                printf("Enter port number for server: ");
+                scanf("%hu", &server_port);
+
+                /* Clear server address structure and initialize with server address */
+                memset(&server_addr, 0, sizeof(server_addr));
+                server_addr.sin_family = AF_INET;
+                memcpy((char *)&server_addr.sin_addr, server_hp->h_addr, server_hp->h_length);
+                server_addr.sin_port = htons(server_port);
+
+                /* connect to the server */
+                if (connect(sock_client, (struct sockaddr *) &server_addr, sizeof (server_addr)) < 0) {
+                    perror("Client: can't connect to server");
+                    close(sock_client);
+                    exit(1);
+                }
+
+               end = 0;
+
+            } else {
+                exit(1);
+            }
+            
         }
     }
 }
