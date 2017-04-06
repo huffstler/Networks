@@ -222,7 +222,6 @@ int main(void) {
 		
 		//transaction amount was over limit, send error code
 		if (messageData[2] > 1000000 || messageData[2] < -1) {	
-			printf("we got a transaction amount in the negatives, or over 1,000,000");
 			errorCode = 4;
 		}
 		
