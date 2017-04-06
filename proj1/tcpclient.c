@@ -165,7 +165,7 @@ int main(void) {
         // Should make sentence look like so: transaction_type,account_type,amount
         
         msg_len = strlen(sentence) + 1;
-        memcpy(*bufferString,*sentence,msg_len);
+        memcpy(bufferString,sentence,msg_len);
         printf("BufferString: %s Sentence: %s", bufferString, sentence);
         // INCORRECT: sprintf(sentence,"%d,%d,%d",transtype,accttype,amount); 
 
