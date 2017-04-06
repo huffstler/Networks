@@ -126,23 +126,27 @@ int main(void) {
 	s1[11] = "1,3,-1";
 	
 	
+	
+	sock_connection = accept(sock_server, (struct sockaddr *) &client_addr,
+							 &client_addr_len);
+
+	/* The accept function blocks the server until a
+	   connection request comes from a client */
+
+	if (sock_connection < 0) {
+		perror("Server: accept() error\n");
+		close(sock_server);
+		exit(1);
+	}
+
+
     /* wait for incoming connection requests in an indefinite loop */
     for (;;) {
 	
-        sock_connection = accept(sock_server, (struct sockaddr *) &client_addr,
-                                 &client_addr_len);
-								 
-        /* The accept function blocks the server until a
-           connection request comes from a client */
-        
-		if (sock_connection < 0) {
-            perror("Server: accept() error\n");
-            close(sock_server);
-            exit(1);
-        }
+
 		
         /* receive the message */
-		/*
+		
         bytes_recd = recv(sock_connection, sentence, STRING_SIZE, 0);
         /*DO STUFF IN HERE WITH THE MESSAGE YOU RECIEVED*/
         //message syntax ["int,int,int"] --> "acct_type,trans_type,trans_amount"
@@ -155,13 +159,13 @@ int main(void) {
 		
 		
 		*/
-
+		
 		errorCode = 0;
 		
 		
 		//strcpy(sentence,s1[j]);
 		
-		//printf("we received %s\n",sentence);
+		printf("we received %s\n",sentence);
 		
 		
 		i = 0;
@@ -186,10 +190,26 @@ int main(void) {
 				outArr[0] = 1;
 				break;
 			default:
-				//someone messed up
+				close(sock_connection);
+				sock_connection = accept(sock_server, (struct sockaddr *) &client_addr,
+						 &client_addr_len);
+
+				/* The accept function blocks the server until a
+				   connection request comes from a client */
+
+				if (sock_connection < 0) {
+					perror("Server: accept() error\n");
+					close(sock_server);
+					exit(1);
+				}
+				continue;
 				break;
 
 		}
+		
+		
+		
+		
 		// check transaction type from message we got
 		switch (messageData[1]) {
 			case 0:
@@ -306,6 +326,7 @@ int main(void) {
         
 		
         /* close the socket */
-        close(sock_connection);
+        
     }
+	close(sock_connection);
 }
