@@ -47,9 +47,6 @@ int main(void) {
     int transtype, accttype, amount, balance_before, balance_after, err_code; 
     int messageData[];
     int i = 0;
-
-    int checking_account = 0;
-    int savings_account = 0;
  
     // Special numbers for our server and client to interpret
 
@@ -196,17 +193,47 @@ int main(void) {
         balance_after = messageData[3];
         err_code = messageData[4];
 
-        if(){
-
+        if(err_code == 0){ // No error
+            if(accttype == 0){ // checking account
+                if (transtype == 0) { // withdraw
+                    printf("Your balance before was %d, your balance now is $%d.",balance_before ,balance_after);
+                } else if (transtype == 1) { // deposit
+                    printf("Your account had %d, it now has $%d left in it.",balance_before, balance_after);
+                } else if (transtype == 2) { // transfer
+                    // TODO: Wait for server side changes first
+                } else { // check balance
+                    printf("Your balance is: $%d", balance_after);
+                }
+            } else { // savings account
+                if (transtype == 0) { // withdraw
+                    printf("Your balance before was %d, your balance now is $%d.",balance_before ,balance_after);
+                } else if (transtype == 1) { // deposit
+                    printf("Your account had %d, it now has $%d left in it.",balance_before, balance_after);
+                } else if (transtype == 2) { // transfer
+                    // TODO: Wait for server side changes first
+                } else { // check balance
+                    printf("Your balance is: $%d", balance_after);
+                }
+            }
+        } else if () { // Insufficient funds error
+            printf("Sorry, You don't have the necessary funds in your checking account");
+        } else if () { // #%20 != 0
+            printf("You're withdrawal amount must be a multiple of 20!");
+        } else if () { // Can't withdraw from savings account
+            printf("Error, you can't withdraw from a savings account, only a checking account.");
+        } else { // can't make transaction with amount > 1000000
+            printf("Error, you can't make a transaction with an amount that's larger than 1,000,000. Please try again, with a smaller amount.");
         }
-
         // Ask if user wants to end session. If so, set end boolean to true
         printf("Are you done making transactions? Yes = 1 No = 0");
         scanf("%d", end);
         /* close the socket */
         if (end) {
-
-            // send(sock_client, sentence, msg_len, 0);           
+            // send closing packet to server to tell it to cut connection TO DO
+            accttype = -1;
+            sprintf(sentence,"%d,%d,%d",transtype,accttype,amount); 
+            msg_len = strlen(sentence) + 1;
+            send(sock_client, sentence, msg_len, 0);           
             close (sock_client);
         }
     }

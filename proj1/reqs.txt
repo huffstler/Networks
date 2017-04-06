@@ -35,7 +35,7 @@ Client: amount
 
 response Some responses will include -1, ignore those fields.
     | trans_type: [0,1,2,3]
-    | account_type: [4,5]
+    | account_type: [0,1]
     | balancebefore_trans:  [Natural #'s, -1]
     | balanceafter_trans: Integer
     | err_code: [
@@ -54,3 +54,8 @@ withdraw_valid :   {0,4,100}
 withdraw_invalid : {0,3,100}
 withdraw_invalid : {0,4,115}
 
+Sever message
+  Message sent from client to server telling server 
+  to close connection when user wants to
+
+    looks like this: 42
