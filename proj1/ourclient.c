@@ -215,7 +215,7 @@ int main(void) {
             close(sock_client);
             exit(1);
         }
-        printf("\nReceived %s from the server. It is %d bytes.\n", serverResponse, bytes_recd);
+        printf("Received %s from the server. It is %d bytes.\n\n", serverResponse, bytes_recd);
 
         i=0;
         char *token = strtok(serverResponse,",");
