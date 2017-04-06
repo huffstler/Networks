@@ -44,7 +44,7 @@ int main(void) {
     char serverResponse[STRING_SIZE]; /* receive message */
     
     int transtype, accttype, amount, balance_before, balance_after, err_code; 
-    int messageData[];
+    int messageData[3];
     int i = 0;
  
     // Special numbers for our server and client to interpret
