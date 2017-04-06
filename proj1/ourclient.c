@@ -207,7 +207,7 @@ int main(void) {
                 } else if (transtype == DEPOSIT) { // deposit
                     printf("Your account had %d, it now has $%d left in it.\n", balance_before, balance_after);
                 } else if (transtype == TRANSFER) { // transfer
-                    printf("You transferred $%d from your checking account into your savings account. Your Savings account now has $%d\n", balance_before, balance_after);
+                    printf("You transferred $%d from your savings account into your checking account. Your checking account now has $%d\n", amount, balance_after);
                 } else { // check balance
                     printf("Your balance is: $%d\n", balance_after);
                 }
@@ -217,7 +217,7 @@ int main(void) {
                 } else if (transtype == DEPOSIT) { // deposit
                     printf("Your account had %d, it now has $%d left in it.\n",balance_before, balance_after);
                 } else if (transtype == TRANSFER) { // transfer
-                     printf("You transferred $%d from your savings account into your checking account. Your checking account now has $%d\n", balance_before, balance_after);
+                     printf("You transferred $%d from your checking account into your savings account. Your savings account now has $%d\n", amount, balance_after);
                 } else { // check balance
                     printf("Your balance is: $%d\n", balance_after);
                 }
