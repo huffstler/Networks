@@ -144,6 +144,7 @@ int main(void) {
                 break;
 
             default: printf("You did not enter your response correctly. Please try again.\n");
+                continue;
         }
 
         // What account?
@@ -161,6 +162,7 @@ int main(void) {
                 break;
 
             default: printf("You did not enter a valid response. Please try again.\n");
+            continue;
         }
 
         if (transtype != CHECK_BAL) {
@@ -174,17 +176,15 @@ int main(void) {
         sprintf(sentence,"%d,%d,%d",acctSend,transtype,amount); 
         msg_len = strlen(sentence) + 1;
         memcpy(bufferString,sentence,msg_len);
-        printf("BufferString: %s Sentence: %s\n", bufferString, sentence);
-        
-
+        //printf("BufferString: %s Sentence: %s\n", bufferString, sentence);
         /* send message */
-        printf("\nSending message: %s, of size: %d\n", sentence, strlen(sentence));
+        //printf("\nSending message: %s, of size: %d\n", sentence, strlen(sentence));
         bytes_sent = send(sock_client, bufferString, msg_len, 0);
 
         /* get response from server */
         bytes_recd = recv(sock_client, serverResponse, STRING_SIZE, 0); 
 
-        printf("\nThis is what you got from the server: %s, and this is it's size: %d\n", serverResponse, strlen(serverResponse));
+        //printf("\nThis is what you got from the server: %s, and this is it's size: %d\n", serverResponse, strlen(serverResponse));
 
         i=0;
         char *token = strtok(serverResponse,",");
@@ -207,9 +207,9 @@ int main(void) {
                 } else if (transtype == DEPOSIT) { // deposit
                     printf("Your account had %d, it now has $%d left in it.\n", balance_before, balance_after);
                 } else if (transtype == TRANSFER) { // transfer
-                    // TODO: Wait for server side changes first
+                    printf("You transferred $%d from your checking account into your savings account. Your Savings account now has $%d\n", balance_before, balance_after);
                 } else { // check balance
-                    printf("Your balance is: $%d", balance_after);
+                    printf("Your balance is: $%d\n", balance_after);
                 }
             } else { // savings account
                 if (transtype == WITHDRAW) { // withdraw
@@ -217,31 +217,35 @@ int main(void) {
                 } else if (transtype == DEPOSIT) { // deposit
                     printf("Your account had %d, it now has $%d left in it.\n",balance_before, balance_after);
                 } else if (transtype == TRANSFER) { // transfer
-                    // TODO: Wait for server side changes first
+                     printf("You transferred $%d from your savings account into your checking account. Your checking account now has $%d\n", balance_before, balance_after);
                 } else { // check balance
                     printf("Your balance is: $%d\n", balance_after);
                 }
             }
         } else if (err_code == 1) { // Insufficient funds error
             printf("Sorry, You don't have the necessary funds in your checking account\n");
+            continue;
         } else if (err_code == 2) { // #%20 != 0
             printf("You're withdrawal amount must be a multiple of 20!\n");
-        } else if (err_code == 3) { // Can't withdraw from savings account
+            continue;
+       } else if (err_code == 3) { // Can't withdraw from savings account
             printf("Error, you can't withdraw from a savings account, only a checking account.\n");
-        } else { // can't make transaction with amount > 1000000
+            continue;
+      } else { // can't make transaction with amount > 1000000
             printf("Error, you can't make a transaction with an amount that's larger than 1,000,000. Please try again, with a smaller amount.\n");
-        }
+            continue;
+     }
         // Ask if user wants to end session. If so, set end boolean to true
-        printf("Are you done making transactions? Yes = 1 No = 0\n");
+        printf("Are you done making transactions? Yes = 1 No = 0\n>> ");
         scanf("%d", &end);
         /* close the socket */
         if (end) {
-            // send closing packet to server to tell it to cut connection TO DO
+            // send closing packet to server to tell it to cut connection
             accttype = -1;
             msg_len = strlen(sentence) + 1;
             sprintf(sentence,"%d,%d,%d",accttype,transtype,amount);
 			memcpy(bufferString,sentence,msg_len);
-			printf("BufferString: %s Sentence: %s\n", bufferString, sentence);
+			//printf("BufferString: %s Sentence: %s\n", bufferString, sentence);
             send(sock_client, bufferString, msg_len, 0);           
             close (sock_client);
         }
