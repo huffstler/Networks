@@ -155,10 +155,7 @@ int main(void) {
 		/*
 		[0] = acct [0: checking, 1: savings]
 		[1] = trans_type [0: withdraw, 1: dep, 2: trans, 3: check bal] 
-		[2] = trans_amount (-1 if N/A)
-		
-		
-		*/
+		[2] = trans_amount (-1 if N/A)		*/
 		
 		errorCode = 0;
 		
@@ -191,6 +188,7 @@ int main(void) {
 				break;
 			default:
 				close(sock_connection);
+				printf("socket closed based on act type\nwaiting for new connection\n");
 				sock_connection = accept(sock_server, (struct sockaddr *) &client_addr,
 						 &client_addr_len);
 
@@ -276,13 +274,15 @@ int main(void) {
 					}
 					break;
 				case TRANSFER:
-				//MAKE SURE THE MESSAGE CONTAINS INFO FOR THE ACCOUNT INTO WICH THE MONEY WENT
+					//MAKE SURE THE MESSAGE CONTAINS INFO FOR THE ACCOUNT INTO WICH THE MONEY WENT
 					outArr[1] = 2;					
 					if (clientAcct == CHECKING && (accountBalances[0]>=messageData[2]) ) {
+						outArr[0] = 1;
 						accountBalances[0] -= messageData[2];
 						accountBalances[1] += messageData[2];
 					}
 					else if (clientAcct == SAVINGS && (accountBalances[1]>=messageData[2]) ) {
+						outArr[0] = 0;
 						accountBalances[1] -= messageData[2];
 						accountBalances[0] += messageData[2];
 					}
@@ -309,10 +309,7 @@ int main(void) {
 		
 		outArr[4] = errorCode;
 		
-		//tranfer funds clause get other accounts info if transfering
 
-		
-		
 		//build string "acct,type,before,after,error"
 		sprintf(strBuf,"%d,%d,%d,%d,%d",outArr[0],outArr[1],outArr[2],outArr[3],outArr[4]);
 		
