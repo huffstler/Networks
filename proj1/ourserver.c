@@ -37,7 +37,7 @@ int main(void) {
                                         stores client address */
     unsigned int client_addr_len;  /* Length of client address structure */
     char sentence[STRING_SIZE];  /* receive message */
-    char modifiedSentence[STRING_SIZE]; /* send message */
+    char strBuf[STRING_SIZE]; /* temp buffer before memcpy, to build the string */
     unsigned int msg_len;  /* length of message */
     int bytes_sent, bytes_recd; /* number of bytes sent or received */
     unsigned int i;  /* temporary loop variable */
@@ -53,6 +53,10 @@ int main(void) {
 	[1] = SAVINGS
 	*/
     
+	/* initialize account info */
+    accountBalances[0] = 0;
+    accountBalances[1] = 0;
+	
 	int errorCode = 0; /* error code server sends back to client
 	0: no error
 	1: insufficient funds
@@ -68,7 +72,8 @@ int main(void) {
 	[3]: after
 	[4]: error code
 	*/
-    enum acct_type clientAcct; /* account given by client message */
+    
+	enum acct_type clientAcct; /* account given by client message */
     enum trans_type clientTrans; /* transaction type given by client */
     
 	/* open a socket */
@@ -76,10 +81,6 @@ int main(void) {
         perror("Server: can't open stream socket");
         exit(1);
     }
-    
-	/* initialize account info */
-    accountBalances[0] = 0;
-    accountBalances[1] = 0;
     
 	/* initialize server address information */
     memset(&server_addr, 0, sizeof(server_addr));
@@ -107,16 +108,33 @@ int main(void) {
 	
     printf("I am here to listen ... on port %hu\n\n", server_port);
     client_addr_len = sizeof (client_addr);
+	int j =0;
+	
+	char* s1[12];
+	
+	s1[0] = "0,1,1000";
+	s1[1] = "1,1,666";
+	s1[2] = "0,3,-1";
+	s1[3] = "1,3,-1";
+	s1[4] = "1,0,40";
+	s1[5] = "0,3,-1";
+	s1[6] = "1,3,-1";
+	s1[7] = "0,0,49";
+	s1[8] = "1,2,10000";
+	s1[9] = "0,2,10000";
+	s1[10] = "0,3,-1";
+	s1[11] = "1,3,-1";
+	
 	
     /* wait for incoming connection requests in an indefinite loop */
     for (;;) {
-	/*
+	
         sock_connection = accept(sock_server, (struct sockaddr *) &client_addr,
                                  &client_addr_len);
 								 
         /* The accept function blocks the server until a
            connection request comes from a client */
-        /*
+        
 		if (sock_connection < 0) {
             perror("Server: accept() error\n");
             close(sock_server);
@@ -136,16 +154,14 @@ int main(void) {
 		[2] = trans_amount (-1 if N/A)
 		
 		
-		
-		
-		
-		
-		
 		*/
-		char s1[] = "0,1,1000";
-		strcpy(sentence,s1);
+
+		errorCode = 0;
 		
-		printf("we received %s\n",sentence);
+		
+		//strcpy(sentence,s1[j]);
+		
+		//printf("we received %s\n",sentence);
 		
 		
 		i = 0;
@@ -153,18 +169,15 @@ int main(void) {
 		
         while (token != NULL)
         {
-			printf("adding %d to slot %d\n",atoi(token), i);
 			messageData[i] = atoi(token);
             token = strtok(NULL, ",");
             i++;
         }
 
-        //check account
-		printf("checking account from message got %d\n", messageData[0]);
+		
+        //check account type from message we got
 		switch (messageData[0]) {
-
 			case 0:
-			printf("we are checking\n");
 				clientAcct = CHECKING;
 				outArr[0] = 0;
 				break;
@@ -174,19 +187,31 @@ int main(void) {
 				break;
 			default:
 				//someone messed up
-				printf("client sent us garbage account information.\n");
 				break;
 
 		}
+		// check transaction type from message we got
+		switch (messageData[1]) {
+			case 0:
+				clientTrans = WITHDRAW;
+				break;
+			case 1:
+				clientTrans = DEPOSIT;
+				break;
+			case 2:
+				clientTrans = TRANSFER;
+				break;
+			case 3:
+				clientTrans = CHECK_BAL;
+				break;
+		}
 		
 		//get balance before
-		switch (clientAcct) {
-			case CHECKING:
-				outArr[2] = accountBalances[0];
-				break;
-			case SAVINGS:
-				outArr[2] = accountBalances[1];
-				break;
+		if((clientAcct == CHECKING && clientTrans != TRANSFER) || (clientAcct == SAVINGS && clientTrans == TRANSFER)){
+			outArr[2] = accountBalances[0];
+		}
+		else{
+			outArr[2] = accountBalances[1];
 		}
 		
 		//check transaction type
@@ -203,15 +228,15 @@ int main(void) {
 		}
 		
 		if (errorCode == 0) {
-			switch (messageData[1]) {
-				case 0:
+			switch (clientTrans) {
+				case WITHDRAW:
 					//do withdraw (only on checking)
-					clientTrans = WITHDRAW;
 					outArr[1] = 0;
 					if (clientAcct == SAVINGS) {
 						errorCode = 3;
 					}
 					else if ((messageData[2] % 20) != 0 ) {
+
 						errorCode = 2;
 					}
 					else if ( accountBalances[0]>=messageData[2] ) {
@@ -221,22 +246,17 @@ int main(void) {
 						errorCode = 1;
 					}
 					break;					
-				case 1:
-					printf("we are depositing\n");
-					clientTrans = DEPOSIT;
+				case DEPOSIT:
 					outArr[1] = 1;
 					if (clientAcct == CHECKING){
-						printf("were checking and epositing\n");
 						accountBalances[0] += messageData[2];
 					}
 					else{
-						printf("were savings and epositing\n");
 						accountBalances[1] += messageData[2];
 					}
 					break;
-				case 2:
+				case TRANSFER:
 				//MAKE SURE THE MESSAGE CONTAINS INFO FOR THE ACCOUNT INTO WICH THE MONEY WENT
-					clientTrans = TRANSFER;
 					outArr[1] = 2;					
 					if (clientAcct == CHECKING && (accountBalances[0]>=messageData[2]) ) {
 						accountBalances[0] -= messageData[2];
@@ -247,39 +267,45 @@ int main(void) {
 						accountBalances[0] += messageData[2];
 					}
 					else {
+
 						errorCode = 1;
 					}
 					break;
-				case 3:
-					clientTrans = CHECK_BAL;
+				case CHECK_BAL:
 					outArr[1] = 3;
 					break;
 				default:
+					break;
 					//someone messed up, this should never happen
-					printf("Client sent us garbage in the trans type slot.\n");
 			}
 			
 		}
 		
 		//get balance after
-		if (clientAcct == CHECKING)
+		if ((clientAcct == CHECKING && clientTrans != TRANSFER) || (clientAcct == SAVINGS && clientTrans == TRANSFER))
 			outArr[3] = accountBalances[0];
 		else
 			outArr[3] = accountBalances[1];
 		
 		outArr[4] = errorCode;
 		
-		//build string "acct,type,before,after,error"
-		sprintf(sentence,"%d,%d,%d,%d,%d",outArr[0],outArr[1],outArr[2],outArr[3],outArr[4]);
-		msg_len = strlen(sentence) + 1;
+		//tranfer funds clause get other accounts info if transfering
+
 		
-		printf("about to send string %s of size %d.\n",sentence,msg_len);
+		
+		//build string "acct,type,before,after,error"
+		sprintf(strBuf,"%d,%d,%d,%d,%d",outArr[0],outArr[1],outArr[2],outArr[3],outArr[4]);
+		
+		msg_len = strlen(strBuf) + 1;
+		
+		memcpy(sentence, strBuf, msg_len);
+		printf("about to send string %s of size %d.\n\n\n",sentence,msg_len);
 		
 		/* send message */
-		//bytes_sent = send(sock_connection, sentence, msg_len, 0);
+		bytes_sent = send(sock_connection, sentence, msg_len, 0);
         
 		
         /* close the socket */
-        //close(sock_connection);
+        close(sock_connection);
     }
 }
