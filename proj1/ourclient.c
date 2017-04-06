@@ -11,7 +11,7 @@
 #include <unistd.h>         /* for close */
 
 #define STRING_SIZE 1024
-// TO DO MAKE SURE TO CHECK RETURN VALUE OF SEND AND RECEIVE FUNCTIONS.
+
 enum trans_type {
     WITHDRAW,
     DEPOSIT,
@@ -29,7 +29,7 @@ int main(void) {
     char bufferString[STRING_SIZE];
     int sock_client;  /* Socket used by client */
 
-     struct sockaddr_in server_addr;  /* Internet address structure that
+    struct sockaddr_in server_addr;  /* Internet address structure that
                                         stores server address */
     struct hostent * server_hp;      /* Structure to store server's IP
                                         address */
@@ -50,30 +50,54 @@ int main(void) {
     int i = 0;
 	int acctSend;
  
-    // Special numbers for our server and client to interpret
-
-    /* Explanation Here for the ints below:   
+    /* Explanation here for the ints below:   
     Client:
-        withdraw:  0
-        deposit:   1
-        transfer:  2
-        check_bal: 3
+        account_type: [
+            0: checking,
+            1: savings
+        ]
 
-        checking:  0 
-        savings:   1
+        transfer_type: [
+            0: withdraw,
+            1: deposit,
+            2: transfer,
+            3: check_bal
+        ]
 
-        amount: [Natural #'s, -1]
+        amount: [
+            Natural #'s: any regular monetary amount, 
+            -1: only used with check balance
+        ]
 
     Server response:
-        trans_type: [0,1,2,3]
-        account_type: [0,1]
-        balancebefore_trans:  [-1, Natural #'s]
-        balanceafter_trans: Integer
-        err_code: [0: no error, 1: insufficient funds, 2: withdrawal not multiple of 20, 3: attempting to withdraw from savings account]
-            4: transaction was > 1,000,000
+        account_type: [
+            0: Checking account,
+            1: Savings account
+        ]
+        trans_type: [
+            0: withdraw,
+            1: deposit,
+            2: transfer,
+            3: check_bal
+        ]
+        balancebefore_trans:  [
+            -1: only used in conjunction with check_bal,
+            Natural #'s: any other valid monetary amount
+        ]
 
-    Client : { account_type, transaction_type, transaction_amount }   
-    Server : { account_type, trans_type, balancebefore_trans, balanceafter_trans, err_code }
+        balanceafter_trans: Integer
+
+        err_code: [
+            0: no error, 
+            1: insufficient funds, 
+            2: withdrawal not multiple of 20, 
+            3: attempting to withdraw from savings account,
+            4: transaction was > 1,000,000
+        ]
+
+    Client : account_type,transaction_type,transaction_amount
+    Server : account_type,trans_type,balancebefore_trans,balanceafter_trans,err_code
+
     */
 
 
@@ -124,7 +148,6 @@ int main(void) {
         // What action are you going to do?
         printf("What action would you like to perform?\nWithdraw (0) | Deposit (1) | Transfer (2) | Check balance (3)\n>> ");
         scanf("%d", &choice);
-		// printf("here %d\n", choice);
 		fflush(stdout);
         switch (choice) {
             case 0:
@@ -170,13 +193,12 @@ int main(void) {
             printf("How much?\n>> ");
             scanf("%d", &amount);
             // This is where I would put a type check, but it's supposed to be checked on the server....
-        } else { amount = -1; }
+        } else { amount = -1; } // the -1 acts as a kill switch for the server connection when we need it.
         
         // Should make sentence look like so: transaction_type,account_type,amount
         sprintf(sentence,"%d,%d,%d",acctSend,transtype,amount); 
         msg_len = strlen(sentence) + 1;
         memcpy(bufferString,sentence,msg_len);
-        //printf("BufferString: %s Sentence: %s\n", bufferString, sentence);
         /* send message */
         bytes_sent = send(sock_client, bufferString, msg_len, 0);
         if (bytes_sent < 1) {
@@ -212,23 +234,23 @@ int main(void) {
         if(err_code == 0){ // No error
             if(accttype == 0){ // checking account
                 if (transtype == WITHDRAW) { // withdraw
-                    printf("Your balance before was %d, your balance now is $%d.\n", balance_before, balance_after);
+                    printf("Your checking balance before was %d, your balance now is $%d.\n", balance_before, balance_after);
                 } else if (transtype == DEPOSIT) { // deposit
-                    printf("Your account had %d, it now has $%d left in it.\n", balance_before, balance_after);
-                } else if (transtype == TRANSFER) { // transfer
+                    printf("Your checking account had %d, it now has $%d left in it.\n", balance_before, balance_after);
+                } else if (transtype == TRANSFER) { // transfer from savings to checking
                     printf("You transferred $%d from your savings account into your checking account. Your checking account now has $%d\n", amount, balance_after);
                 } else { // check balance
-                    printf("Your balance is: $%d\n", balance_after);
+                    printf("Your checking balance is: $%d\n", balance_after);
                 }
             } else { // savings account
                 if (transtype == WITHDRAW) { // withdraw
-                    printf("Your balance before was %d, your balance now is $%d.\n",balance_before ,balance_after);
+                    printf("Your savings balance before was %d, your balance now is $%d.\n",balance_before ,balance_after);
                 } else if (transtype == DEPOSIT) { // deposit
-                    printf("Your account had %d, it now has $%d left in it.\n",balance_before, balance_after);
-                } else if (transtype == TRANSFER) { // transfer
+                    printf("Your savings account had %d, it now has $%d left in it.\n",balance_before, balance_after);
+                } else if (transtype == TRANSFER) { // transfer from chekcing to savings
                      printf("You transferred $%d from your checking account into your savings account. Your savings account now has $%d\n", amount, balance_after);
                 } else { // check balance
-                    printf("Your balance is: $%d\n", balance_after);
+                    printf("Your savings balance is: $%d\n", balance_after);
                 }
             }
         } else if (err_code == 1) { // Insufficient funds error
@@ -237,13 +259,13 @@ int main(void) {
         } else if (err_code == 2) { // #%20 != 0
             printf("You're withdrawal amount must be a multiple of 20!\n");
             continue;
-       } else if (err_code == 3) { // Can't withdraw from savings account
+        } else if (err_code == 3) { // Can't withdraw from savings account
             printf("Error, you can't withdraw from a savings account, only a checking account.\n");
             continue;
-      } else { // can't make transaction with amount > 1000000
+        } else { // can't make transaction with amount > 1000000
             printf("Error, you can't make a transaction with an amount that's larger than 1,000,000. Please try again, with a smaller amount.\n");
             continue;
-     }
+        }
         // Ask if user wants to end session. If so, set end boolean to true
         printf("Are you done making transactions? Yes = 1 No = 0\n>> ");
         scanf("%d", &end);
@@ -256,14 +278,13 @@ int main(void) {
             msg_len = strlen(sentence) + 1;
             sprintf(sentence,"%d,%d,%d",accttype,transtype,amount);
 			memcpy(bufferString,sentence,msg_len);
-			// printf("BufferString: %s Sentence: %s\n", bufferString, sentence);
             send(sock_client, bufferString, msg_len, 0);           
             close (sock_client);
 
             printf("Would you like to make a new connection? Yes = 1 No = 0\n>> ");
-            scanf("%d", quit);
+            scanf("%d", &quit);
 
-            if (quit) {
+            if (quit) { // restart connection if client wants to.
 
                 if ((sock_client = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
                     perror("Client: can't open stream socket");
@@ -296,7 +317,7 @@ int main(void) {
                     exit(1);
                 }
 
-               end = 0;
+                end = 0;
 
             } else {
                 exit(1);
