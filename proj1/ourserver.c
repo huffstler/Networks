@@ -109,22 +109,7 @@ int main(void) {
     printf("I am here to listen ... on port %hu\n\n", server_port);
     client_addr_len = sizeof (client_addr);
 	int j =0;
-	
-	char* s1[12];
-	
-	s1[0] = "0,1,1000";
-	s1[1] = "1,1,666";
-	s1[2] = "0,3,-1";
-	s1[3] = "1,3,-1";
-	s1[4] = "1,0,40";
-	s1[5] = "0,3,-1";
-	s1[6] = "1,3,-1";
-	s1[7] = "0,0,49";
-	s1[8] = "1,2,10000";
-	s1[9] = "0,2,10000";
-	s1[10] = "0,3,-1";
-	s1[11] = "1,3,-1";
-	
+
 	
 	
 	sock_connection = accept(sock_server, (struct sockaddr *) &client_addr,
@@ -148,6 +133,12 @@ int main(void) {
         /* receive the message */
 		
         bytes_recd = recv(sock_connection, sentence, STRING_SIZE, 0);
+		if(bytes_recd<=0){
+			perror("Server: error on recv, bytes recd 0 or negative"); /* requests that will be queued */
+			close(sock_server);
+			exit(1);
+		}
+		
         /*DO STUFF IN HERE WITH THE MESSAGE YOU RECIEVED*/
         //message syntax ["int,int,int"] --> "acct_type,trans_type,trans_amount"
         
@@ -157,14 +148,9 @@ int main(void) {
 		[1] = trans_type [0: withdraw, 1: dep, 2: trans, 3: check bal] 
 		[2] = trans_amount (-1 if N/A)		*/
 		
-		errorCode = 0;
 		
 		
-		//strcpy(sentence,s1[j]);
-		
-		printf("we received %s\n",sentence);
-		
-		
+		printf("Received %s it is %d bytes long\n", sentence, bytes_recd );
 		i = 0;
         char *token = strtok(sentence, ",");
 		
@@ -174,7 +160,8 @@ int main(void) {
             token = strtok(NULL, ",");
             i++;
         }
-
+		
+		errorCode = 0;
 		
         //check account type from message we got
 		switch (messageData[0]) {
@@ -188,7 +175,7 @@ int main(void) {
 				break;
 			default:
 				close(sock_connection);
-				printf("socket closed based on act type\nwaiting for new connection\n");
+				printf("Socket closed because client told us to terminate the connection.\nWaiting for new connection.\n");
 				sock_connection = accept(sock_server, (struct sockaddr *) &client_addr,
 						 &client_addr_len);
 
@@ -206,9 +193,14 @@ int main(void) {
 		}
 		
 		
-		
-		
+
 		// check transaction type from message we got
+		/*
+		0 WITHDRAW
+		1 DEPOSIT
+		2 TRANSFER
+		3 CHECK_BAL
+		*/
 		switch (messageData[1]) {
 			case 0:
 				clientTrans = WITHDRAW;
@@ -224,6 +216,7 @@ int main(void) {
 				break;
 		}
 		
+		
 		//get balance before
 		if((clientAcct == CHECKING && clientTrans != TRANSFER) || (clientAcct == SAVINGS && clientTrans == TRANSFER)){
 			outArr[2] = accountBalances[0];
@@ -232,21 +225,17 @@ int main(void) {
 			outArr[2] = accountBalances[1];
 		}
 		
-		//check transaction type
-		/*
-		0 WITHDRAW
-		1 DEPOSIT
-		2 TRANSFER
-		3 CHECK_BAL
-		*/
-		if (messageData[2] > 1000000 || messageData[2] < -1) {
-			//transaction amount was over limit, send error code
+		//transaction amount was over limit, send error code
+		if (messageData[2] > 1000000 || messageData[2] < -1) {	
 			printf("we got a transaction amount in the negatives, or over 1,000,000");
 			errorCode = 4;
 		}
 		
+		
+		//do stuff based on the transaction type
 		if (errorCode == 0) {
 			switch (clientTrans) {
+			
 				case WITHDRAW:
 					//do withdraw (only on checking)
 					outArr[1] = 0;
@@ -263,8 +252,10 @@ int main(void) {
 					else {
 						errorCode = 1;
 					}
-					break;					
+					break;	
+					
 				case DEPOSIT:
+					//add input to account specified
 					outArr[1] = 1;
 					if (clientAcct == CHECKING){
 						accountBalances[0] += messageData[2];
@@ -273,6 +264,7 @@ int main(void) {
 						accountBalances[1] += messageData[2];
 					}
 					break;
+					
 				case TRANSFER:
 					//MAKE SURE THE MESSAGE CONTAINS INFO FOR THE ACCOUNT INTO WICH THE MONEY WENT
 					outArr[1] = 2;					
@@ -291,9 +283,11 @@ int main(void) {
 						errorCode = 1;
 					}
 					break;
+					
 				case CHECK_BAL:
 					outArr[1] = 3;
 					break;
+					
 				default:
 					break;
 					//someone messed up, this should never happen
@@ -316,11 +310,16 @@ int main(void) {
 		msg_len = strlen(strBuf) + 1;
 		
 		memcpy(sentence, strBuf, msg_len);
-		printf("about to send string %s of size %d.\n\n\n",sentence,msg_len);
+		
 		
 		/* send message */
 		bytes_sent = send(sock_connection, sentence, msg_len, 0);
-        
+		if(bytes_sent<=0){
+			perror("Server: error on send, bytes sent 0 or negative"); /* requests that will be queued */
+			close(sock_server);
+			exit(1);
+		}
+        printf("Sent string %s of size %d.\n\n",sentence,bytes_sent);
 		
         /* close the socket */
         
