@@ -1,9 +1,8 @@
-/* tcp_ client.c */ 
-/* Programmed by Adarsh Sethi */
+/* tcp_client.c */ 
+/* Programmed by Pat Hough */
 /* February 19, 2017 */     
 
 #include <stdio.h>          /* for standard I/O functions */
-#include <stdbool.h>        /* Support for boolean values */
 #include <stdlib.h>         /* for exit */
 #include <string.h>         /* for memset, memcpy, and strlen */
 #include <netdb.h>          /* for struct hostent and gethostbyname */
@@ -12,7 +11,7 @@
 #include <unistd.h>         /* for close */
 
 #define STRING_SIZE 1024
-
+// TO DO MAKE SURE TO CHECK RETURN VALUE OF SEND AND RECEIVE FUNCTIONS.
 enum trans_type {
     WITHDRAW,
     DEPOSIT,
@@ -26,8 +25,8 @@ enum acct_type {
 };
 
 int main(void) {
-    bool end = false;
-    char ending_choice;
+    int end = 0;
+    char bufferString[STRING_SIZE];
     int sock_client;  /* Socket used by client */
 
     struct sockaddr_in server_addr;  /* Internet address structure that
@@ -118,8 +117,6 @@ int main(void) {
     }
 
     while(!end) {
-
-        /* User interface */
         // What action are you going to do?
         printf("What action would you like to perform?\nWithdraw (w) | Deposit (d) | Transfer (t) | Check balance (b)\n>> ");
         scanf("%s", choice);
@@ -166,12 +163,15 @@ int main(void) {
         } else { amount = -1; }
         
         // Should make sentence look like so: transaction_type,account_type,amount
-        sprintf(sentence,"%d,%d,%d",transtype,accttype,amount); 
+        
         msg_len = strlen(sentence) + 1;
+        memcpy(bufferString,sentence,msg_len);
+        printf("BufferString: %s Sentence: %s", bufferString, sentence);
+        // INCORRECT: sprintf(sentence,"%d,%d,%d",transtype,accttype,amount); 
 
         /* send message */
         printf("\nSending message: %s, of size: %d\n", sentence, strlen(sentence));
-        bytes_sent = send(sock_client, sentence, msg_len, 0);
+        bytes_sent = send(sock_client, bufferString, msg_len, 0);
 
         /* get response from server */
         bytes_recd = recv(sock_client, serverResponse, STRING_SIZE, 0); 
@@ -196,9 +196,9 @@ int main(void) {
         if(err_code == 0){ // No error
             if(accttype == 0){ // checking account
                 if (transtype == 0) { // withdraw
-                    printf("Your balance before was %d, your balance now is $%d.",balance_before ,balance_after);
+                    printf("Your balance before was %d, your balance now is $%d.", balance_before, balance_after);
                 } else if (transtype == 1) { // deposit
-                    printf("Your account had %d, it now has $%d left in it.",balance_before, balance_after);
+                    printf("Your account had %d, it now has $%d left in it.", balance_before, balance_after);
                 } else if (transtype == 2) { // transfer
                     // TODO: Wait for server side changes first
                 } else { // check balance
@@ -231,9 +231,9 @@ int main(void) {
         if (end) {
             // send closing packet to server to tell it to cut connection TO DO
             accttype = -1;
-            sprintf(sentence,"%d,%d,%d",transtype,accttype,amount); 
             msg_len = strlen(sentence) + 1;
-            send(sock_client, sentence, msg_len, 0);           
+//            sprintf(sentence,"%d,%d,%d",transtype,accttype,amount); 
+            send(sock_client, bufferString, msg_len, 0);           
             close (sock_client);
         }
     }
