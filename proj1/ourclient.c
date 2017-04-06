@@ -124,7 +124,7 @@ int main(void) {
         // What action are you going to do?
         printf("What action would you like to perform?\nWithdraw (0) | Deposit (1) | Transfer (2) | Check balance (3)\n>> ");
         scanf("%d", &choice);
-		printf("here %d\n", choice);
+		// printf("here %d\n", choice);
 		fflush(stdout);
         switch (choice) {
             case 0:
@@ -178,13 +178,22 @@ int main(void) {
         memcpy(bufferString,sentence,msg_len);
         //printf("BufferString: %s Sentence: %s\n", bufferString, sentence);
         /* send message */
-        printf("\nSending message: %s, it is %d bytes.\n", sentence, sizeof(sentence));
         bytes_sent = send(sock_client, bufferString, msg_len, 0);
+        if (bytes_sent < 1) {
+            perror("Client: Sent malformed data.");
+            close(sock_client);
+            exit(1);
+        }
+        printf("\nSent message: %s, it is %d bytes.\n", sentence, bytes_sent);
 
         /* get response from server */
         bytes_recd = recv(sock_client, serverResponse, STRING_SIZE, 0); 
-
-        printf("\nReceived %s from the server. It is %d bytes.\n", serverResponse, sizeof(serverResponse));
+        if (bytes_recd < 1) {
+            perror("Client: Received malformed data.");
+            close(sock_client);
+            exit(1);
+        }
+        printf("\nReceived %s from the server. It is %d bytes.\n", serverResponse, bytes_recd);
 
         i=0;
         char *token = strtok(serverResponse,",");
