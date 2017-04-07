@@ -111,7 +111,7 @@ int main(void) {
 	int j =0;
 
 	
-	
+	//wait for connection from client
 	sock_connection = accept(sock_server, (struct sockaddr *) &client_addr,
 							 &client_addr_len);
 
@@ -125,11 +125,8 @@ int main(void) {
 	}
 
 
-    /* wait for incoming connection requests in an indefinite loop */
+    /* wait for message */
     for (;;) {
-	
-
-		
         /* receive the message */
 		
         bytes_recd = recv(sock_connection, sentence, STRING_SIZE, 0);
@@ -139,10 +136,7 @@ int main(void) {
 			exit(1);
 		}
 		
-        /*DO STUFF IN HERE WITH THE MESSAGE YOU RECIEVED*/
         //message syntax ["int,int,int"] --> "acct_type,trans_type,trans_amount"
-        
-		//sentence structure
 		/*
 		[0] = acct [0: checking, 1: savings]
 		[1] = trans_type [0: withdraw, 1: dep, 2: trans, 3: check bal] 
@@ -164,6 +158,7 @@ int main(void) {
 		errorCode = 0;
 		
         //check account type from message we got
+		//if account type is -1 the client is ready to disconnect, so close the socket and wait for connection
 		switch (messageData[0]) {
 			case 0:
 				clientAcct = CHECKING;
@@ -175,7 +170,7 @@ int main(void) {
 				break;
 			default:
 				close(sock_connection);
-				printf("Socket closed because client told us to terminate the connection.\nWaiting for new connection.\n");
+				printf("\nSocket closed because client told us to terminate the connection.\nWaiting for new connection.\n\n");
 				sock_connection = accept(sock_server, (struct sockaddr *) &client_addr,
 						 &client_addr_len);
 
@@ -227,7 +222,6 @@ int main(void) {
 		
 		//transaction amount was over limit, send error code
 		if (messageData[2] > 1000000 || messageData[2] < -1) {	
-			printf("we got a transaction amount in the negatives, or over 1,000,000");
 			errorCode = 4;
 		}
 		
