@@ -255,16 +255,16 @@ int main(void) {
             }
         } else if (err_code == 1) { // Insufficient funds error
             printf("Sorry, You don't have the necessary funds in your checking account\n");
-            continue;
+            // continue;
         } else if (err_code == 2) { // #%20 != 0
             printf("You're withdrawal amount must be a multiple of 20!\n");
-            continue;
+            // continue;
         } else if (err_code == 3) { // Can't withdraw from savings account
             printf("Error, you can't withdraw from a savings account, only a checking account.\n");
-            continue;
+            // continue;
         } else { // can't make transaction with amount > 1000000
             printf("Error, you can't make a transaction with an amount that's larger than 1,000,000. Please try again, with a smaller amount.\n");
-            continue;
+            // continue;
         }
         // Ask if user wants to end session. If so, set end boolean to true
         printf("Are you done making transactions? Yes = 1 No = 0\n>> ");
